@@ -1,7 +1,7 @@
 package vistas;
 
-import modelo.Factura;
-import modelo.Producto;
+import modelo.*;
+
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,57 +18,51 @@ public class VentanaPrincipal extends JFrame {
 
     public VentanaPrincipal() {
         setTitle("Emisión de Facturas");
-        setSize(500, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new FlowLayout());
+        setSize(600, 400); // Tamaño de la ventana
 
-        // Inicializar campos y botones
+        // Crear componentes
         campoCliente = new JTextField(20);
         campoNombreProducto = new JTextField(20);
         campoPrecioProducto = new JTextField(20);
         campoCantidadProducto = new JTextField(20);
-        areaFactura = new JTextArea(20, 40);
+        areaFactura = new JTextArea(10, 40); // Tamaño inicial del JTextArea
         areaFactura.setEditable(false);
 
+        // Botones
         JButton botonAgregarProducto = new JButton("Agregar Producto");
         JButton botonGenerarFactura = new JButton("Generar Factura");
 
-        // Añadir componentes a la ventana
-        add(new JLabel("Cliente:"));
-        add(campoCliente);
-        add(new JLabel("Nombre Producto:"));
-        add(campoNombreProducto);
-        add(new JLabel("Precio Producto:"));
-        add(campoPrecioProducto);
-        add(new JLabel("Cantidad Producto:"));
-        add(campoCantidadProducto);
-        add(botonAgregarProducto);
-        add(botonGenerarFactura);
-        add(new JScrollPane(areaFactura));
+        // Panel para datos de entrada
+        JPanel panelDatos = new JPanel(new GridLayout(4, 2, 10, 10));
+        panelDatos.add(new JLabel("Cliente:"));
+        panelDatos.add(campoCliente);
+        panelDatos.add(new JLabel("Nombre Producto:"));
+        panelDatos.add(campoNombreProducto);
+        panelDatos.add(new JLabel("Precio Producto:"));
+        panelDatos.add(campoPrecioProducto);
+        panelDatos.add(new JLabel("Cantidad Producto:"));
+        panelDatos.add(campoCantidadProducto);
 
-        // Inicializar la factura
+        // Panel para botones
+        JPanel panelBotones = new JPanel(new FlowLayout());
+        panelBotones.add(botonAgregarProducto);
+        panelBotones.add(botonGenerarFactura);
+
+        // Organización de la ventana
+        getContentPane().setLayout(new BorderLayout());
+        getContentPane().add(panelDatos, BorderLayout.NORTH);
+        getContentPane().add(new JScrollPane(areaFactura), BorderLayout.CENTER);
+        getContentPane().add(panelBotones, BorderLayout.SOUTH);
+
+        // Inicializar factura
         factura = new Factura("");
 
         // Acción del botón Agregar Producto
         botonAgregarProducto.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                try {
-                    String nombre = campoNombreProducto.getText();
-                    double precio = Double.parseDouble(campoPrecioProducto.getText());
-                    int cantidad = Integer.parseInt(campoCantidadProducto.getText());
-
-                    Producto producto = new Producto(nombre, precio, cantidad);
-                    factura.agregarProducto(producto);
-
-                    campoNombreProducto.setText("");
-                    campoPrecioProducto.setText("");
-                    campoCantidadProducto.setText("");
-                    actualizarAreaFactura();
-
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(null, "Por favor, ingrese valores numéricos válidos para precio y cantidad.", "Error", JOptionPane.ERROR_MESSAGE);
-                }
+                agregarProducto();
             }
         });
 
@@ -76,14 +70,41 @@ public class VentanaPrincipal extends JFrame {
         botonGenerarFactura.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                factura.setCliente(campoCliente.getText());
-                ExportarPDF.exportar(factura);
-                JOptionPane.showMessageDialog(null, "Factura generada exitosamente");
+                generarFactura();
             }
         });
     }
 
-    // Método para actualizar el área de texto de la factura
+    // Método para agregar un producto a la factura
+    private void agregarProducto() {
+        try {
+            String nombre = campoNombreProducto.getText();
+            double precio = Double.parseDouble(campoPrecioProducto.getText());
+            int cantidad = Integer.parseInt(campoCantidadProducto.getText());
+
+            Producto producto = new Producto(nombre, precio, cantidad);
+            factura.agregarProducto(producto);
+
+            // Actualizar área de factura
+            actualizarAreaFactura();
+
+            // Limpiar campos de entrada
+            campoNombreProducto.setText("");
+            campoPrecioProducto.setText("");
+            campoCantidadProducto.setText("");
+
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Por favor, ingrese valores numéricos válidos para precio y cantidad.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // Método para generar la factura en PDF
+    private void generarFactura() {
+        factura.setCliente(campoCliente.getText());
+        ExportarPDF.exportar(factura);
+    }
+
+    // Método para actualizar el área de texto con los productos de la factura
     private void actualizarAreaFactura() {
         areaFactura.setText("");
         for (Producto producto : factura.getProductos()) {
@@ -92,11 +113,12 @@ public class VentanaPrincipal extends JFrame {
         areaFactura.append("\nTotal: " + factura.calcularTotal());
     }
 
-    public Factura getFactura() {
-        return factura;
-    }
-
-    public void setFactura(Factura factura) {
-        this.factura = factura;
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new VentanaPrincipal().setVisible(true);
+            }
+        });
     }
 }
